@@ -9,8 +9,21 @@ VERSION=$(cat "$PROJECT_ROOT/../../../../VERSION" 2>/dev/null || echo "0.0.0")
 VERSION=$(echo "$VERSION" | tr -d '[:space:]')
 ARCH="arm64"
 
-# Create build directory
-BUILD_DIR="$PROJECT_ROOT/build-cross"
+BUILD_TYPE=$1
+if [ -z "$BUILD_TYPE" ] || [ "$BUILD_TYPE" != "native" ] && [ "$BUILD_TYPE" != "cross" ]; then
+    echo "Error: Invalid or missing build type. Use 'native' or 'cross'." >&2
+    exit 1
+fi
+
+BUILD_MODE=$2
+if [ -z "$BUILD_MODE" ] || [ "$BUILD_MODE" != "debug" ] && [ "$BUILD_MODE" != "release" ]; then
+    echo "Error: Invalid or missing build mode. Use 'debug' or 'release'." >&2
+    exit 1
+fi
+
+# Create build directory following standard pattern
+PRESET="$BUILD_TYPE-$BUILD_MODE"
+BUILD_DIR="$PROJECT_ROOT/build/$PRESET"
 mkdir -p "$BUILD_DIR"
 
 # Create temporary directory for .deb package structure
@@ -25,11 +38,11 @@ PACKAGE_DIR="$TEMP_DIR/$PACKAGE_NAME"
 mkdir -p "$PACKAGE_DIR/DEBIAN"
 mkdir -p "$PACKAGE_DIR$INSTALL_ROOT/$PROJECT_NAME"
 
-# Copy files to package directory (exclude scripts directory)
+# Copy files to package directory (exclude scripts and build directories)
 echo "Copying project files..."
 cd "$PROJECT_ROOT"
 for item in *; do
-    if [ "$item" != "scripts" ] && [ "$item" != "build-cross" ] && [ "$item" != "build-native" ]; then
+    if [ "$item" != "scripts" ] && [ "$item" != "build" ]; then
         cp -r "$item" "$PACKAGE_DIR$INSTALL_ROOT/$PROJECT_NAME/"
     fi
 done
